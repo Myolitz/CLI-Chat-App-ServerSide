@@ -1,5 +1,5 @@
 /** Class: COSC 2327
- *  LAST EDITED: 9/24/26
+ *  Date of Creation: 9/24/26
  * @author Jesus Cardenas
  * @operating-system Endeavour OS (Linux)
  */
@@ -20,7 +20,7 @@ public class ServerSide
     protected List<ServerThread> activeConn;
 
     //Variables
-    private int networkPort = 12345;
+    final private int networkPort = 12345;
     protected ServerSocket srvrSocket;
     private Socket clientSocket;
     private boolean isDone;
@@ -51,11 +51,18 @@ public class ServerSide
 
                 while (!isDone)
                 {
-                    //Connection on
+                    /*
+                        TODO:
+                        Create server-based ServerThread to read Server Console `System.in` to handle `isDone` changing rather than hard-shutoff
+                     */
+
+                    // Maintains Server "ON" State, updating connections as needed to prevent NPE or IOE
                     updateConns();
                     clientSocket = srvrSocket.accept();
                     System.out.println("Connection Accepted");
 
+                    // Creates a new instance of the `ServerThread` class, passing the reference to the
+                    // existing list and whatever socket has been accepted
                     ServerThread userThread = new ServerThread(clientSocket, activeConn);
                     activeConn.add(userThread);
                     userThread.start();
@@ -63,14 +70,13 @@ public class ServerSide
 
             } catch (IOException e) {
                 System.out.println("Unable to form proper connection!");
-            } catch (NullPointerException e)
-            {
+            } catch (NullPointerException e) {
                 System.out.println("A user has failed to connect!");
             }
-
             System.out.println("Goodbye from the server side!");
         }
 
+    // A bit of a redundant method as I could not figure out how to call it from within ServerThread
     public void broadcast(String msg) throws IOException
         {
             for (ServerThread x : activeConn)
@@ -78,14 +84,18 @@ public class ServerSide
                 x.sendMessage(msg);
             }
         }
-
-        public void updateConns()
-        {
-            for (ServerThread x : activeConn)
-            {
-                x.updateList(activeConn);
+    // Actively updates the connection list for every thread, checking to see if the thread is even alive.
+    // If its not, it removes it from the list to prevent broadcasting NPE/IOE
+    public void updateConns()
+    {
+        for (ServerThread x : activeConn) {
+            if (x.isAlive()) {
+                continue;
+            } else {
+                activeConn.remove(x);
             }
+            x.updateList(activeConn);
         }
-
+    }
 }
 

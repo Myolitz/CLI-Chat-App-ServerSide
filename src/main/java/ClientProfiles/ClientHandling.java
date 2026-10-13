@@ -1,3 +1,9 @@
+/** Class: COSC 2327
+ *  Date of Creation: 10/04/26
+ * @author Jesus Cardenas
+ * @operating-system Endeavour OS (Linux)
+ */
+
 package ClientProfiles;
 
 import ServerHandling.Enums.USER_TYPE;
@@ -20,6 +26,8 @@ public class ClientHandling
     {
         this.name = name;
         groupList = new ArrayList<>();
+
+        //Might not be needed if I directly handle server cmds through a dedicated server thread and not a pseudo-user
         if (name.equalsIgnoreCase("admin"))
         {
             status = USER_TYPE.ADMIN;
@@ -32,6 +40,6 @@ public class ClientHandling
 
     public void createGroup()
     {
-
+        //TODO: Handle
     }
 }

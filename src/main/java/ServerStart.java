@@ -2,7 +2,7 @@ import ServerHandling.ServerSide;
 
 /**
  * Class: COSC 2327
- * Date: September 28th, 2026
+ * Date of Creation: September 28th, 2026
  * @author Jesus Cardenas
  * @operating-system Endeavour OS (Linux)
  */
