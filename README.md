@@ -7,11 +7,11 @@ Only languages allowed were C++ or Java and my other failed project is Java so i
 It's clunky, its sucky, but hopefully it works.
 
 ## Project Objectives / Rubric Guide
-- [ ] Step 1. Create a basic chat application where two clients communicate through a server. Each client
+- [x] Step 1. Create a basic chat application where two clients communicate through a server. Each client
 sends chat messages to the server, and the server forwards (broadcasts) these messages to the
 respective clients. There should still be only one server running.
 
-- [ ] Step 2. Improve the chat application to allow more than two clients to chat concurrently through a
+- [x] Step 2. Improve the chat application to allow more than two clients to chat concurrently through a
 server. All clients send their chat messages to the server, and the server broadcasts these messages to
 all connected clients. There should still be only one server running.
 
