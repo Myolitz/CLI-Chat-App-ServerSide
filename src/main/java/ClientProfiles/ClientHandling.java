@@ -1,5 +1,6 @@
 package ClientProfiles;
 
+import ServerHandling.Enums.USER_TYPE;
 import ServerHandling.ServerThread;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,13 +12,22 @@ public class ClientHandling
 {
     @Getter @Setter
     private String name;
-    private List<ServerThread> friendList;
+    private List<ServerThread> groupList;
+    private USER_TYPE status;
 
 
     public ClientHandling(String name)
     {
         this.name = name;
-        friendList = new ArrayList<>();
+        groupList = new ArrayList<>();
+        if (name.equalsIgnoreCase("admin"))
+        {
+            status = USER_TYPE.ADMIN;
+        }
+        else
+        {
+            status = USER_TYPE.STANDARD;
+        }
     }
 
     public void createGroup()
