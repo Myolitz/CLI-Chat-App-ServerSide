@@ -19,6 +19,7 @@ public class ServerStart
     {
         ServerSide server = new ServerSide();
 
+        // Calling `server.run()` would also work but since Thread implements Runnable then `.start()` works all the same
         server.start();
     }
 }
