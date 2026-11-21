@@ -8,6 +8,7 @@ package ServerHandling;
 
 //Objects/Enums
 import ClientProfiles.ClientHandling;
+import ClientProfiles.GroupHandler;
 import ServerHandling.Enums.USER_TYPE;
 import ServerHandling.Enums.CHAT_TYPE;
 import ServerHandling.Enums.SYS_MSG_TYPE;
@@ -21,6 +22,10 @@ import java.io.BufferedInputStream;
 import java.util.List;
 import java.net.Socket;
 
+import ServerHandling.MessageHandling.MessageHandler;
+import ServerUtils.ChatDictionaries;
+
+
 public class ServerThread extends Thread
 {
     // Class Variables
@@ -29,6 +34,9 @@ public class ServerThread extends Thread
     private DataInputStream clientToServer;
     private List<ServerThread> connections;
     private ClientHandling user;
+    private MessageHandler msgHandler;
+    private ChatDictionaries dict;
+
     private String destUser;
     protected String userString = "";
     protected String[] userArgs;
@@ -38,6 +46,13 @@ public class ServerThread extends Thread
     {
         this.connections = connections;
         this.clientSocket = client;
+        msgHandler = new MessageHandler();
+        dict = new ChatDictionaries();
+    }
+
+    public ServerThread(USER_TYPE type)
+    {
+        //TODO HANDLE CREATION OF ADMIN/SYSTEM THREAD TO READ SYSTEM.IN
     }
 
     @Override
@@ -68,6 +83,30 @@ public class ServerThread extends Thread
             while (!userString.equalsIgnoreCase("Quit"))
             {
                 userString = clientToServer.readUTF();
+                switch (msgHandler.messageType(userString))
+                {
+                    case GLOBAL -> // "[message]"
+                    {
+                        broadcastMessage(userString);
+                    }
+                    case PRIVATE -> // "/priv [destUser] [message]"
+                    {
+                        privateMessage(userString);
+                    }
+                    case GROUP -> // "/group [groupName] [message]", "/group create [groupName]", "/add [targetUser] [groupName]
+                    {
+                        groupMessage(userString);
+                    }
+                    case COSMETIC -> // "/nick [newNickName]
+                    {
+                        changeName(userString);
+                    }
+                    default ->
+                    {
+                        serverToClient.writeUTF("There was en error in processing your message, Please Re-send!");
+                    }
+                }
+
                 if (userString.equalsIgnoreCase("Quit"))
                 {
                     broadcastSystemMessage(SYS_MSG_TYPE.LEAVE);
@@ -77,44 +116,6 @@ public class ServerThread extends Thread
                 else
                 {
                     System.out.println(this.user.getName() + ": " + userString);
-
-//                serverToClient.writeUTF("Reflecting the message of " + userString);
-//                serverToClient.flush();
-
-                    broadcastMessage(userString);
-
-//                if (userString.startsWith("/nick "))
-//                {
-//                    userArgs = userString.split(" ", 2);
-//                    if (userArgs.length == 2)
-//                    {
-//                        serverToClient.writeUTF("Are you wanting to switch from " + this.user.getName() + " to " + userArgs[1] + " ?");
-//                        serverToClient.flush();
-//
-//                        userString = clientToServer.readUTF();
-//                        if (userString.equalsIgnoreCase("yes"))
-//                        {
-//                            broadcastMessage(this.user.getName() + " has changed their name to " + userArgs[1]);
-//                            this.user.setName(userArgs[1]);
-//
-//                        }
-//                    }
-//                }
-//                else if (userString.startsWith("/priv"))
-//                {
-//                    userArgs = userString.split(" ", 3);
-//                    if (userArgs.length == 3)
-//                    {
-//                        privateMessage(userArgs[2], userArgs[1]);
-//                    }
-//                }
-//                else if (userString.startsWith("/group"))
-//                {
-//                    //Handle group
-//                }
-//                else {
-//                    broadcastMessage(userString);
-//                }
                 }
 
 
@@ -153,12 +154,23 @@ public class ServerThread extends Thread
             {
                 case JOIN ->
                 {
-                    x.serverToClient.writeUTF("[" + USER_TYPE.SERVER + "] " + this.user.getName() + " has entered " + CHAT_TYPE.GLOBAL + " chat! Welcome them in!");
+                    x.serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER)
+                            + this.user.getName() + " has entered " + CHAT_TYPE.GLOBAL + " chat! Welcome them in!");
+
                     x.serverToClient.flush();
                 }
                 case LEAVE ->
                 {
-                    x.serverToClient.writeUTF("[" + USER_TYPE.SERVER + "] " + this.user.getName() + " has left the chat");
+                    x.serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER)
+                            + this.user.getName() + " has left the chat");
+
+                    x.serverToClient.flush();
+                }
+                case NICK_CHANGE ->
+                {
+                    x.serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER)
+                            + this.user.getOldName() + " has changed their name to " + this.user.getName());
+
                     x.serverToClient.flush();
                 }
             }
@@ -166,21 +178,57 @@ public class ServerThread extends Thread
         }
     }
 
-    //TODO: Handle
-    public void privateMessage(String msg, String destUser) throws IOException {
+    public void privateMessage(String msg) throws IOException {
+
+        userArgs = msg.split(" ", 3);
         for (ServerThread x : connections)
         {
-            if (x.user.getName().equalsIgnoreCase(destUser))
+            if (x.user.getName().equalsIgnoreCase(userArgs[1]))
             {
-                x.serverToClient.writeUTF("[" + CHAT_TYPE.PRIVATE + "]" + this.user.getName() + ": " + msg);
+                x.serverToClient.writeUTF(dict.getChatMaps().get(CHAT_TYPE.PRIVATE) + this.user.getName() + ": " + userArgs[2]);
                 x.serverToClient.flush();
             }
         }
     }
 
-    public void groupMessage(String msg, String destGroup)
-    {
-        //TODO: Handle
+    public void groupMessage(String msg) throws IOException {
+        userArgs = msg.split(" ", 3);
+
+        if (userArgs[1].equalsIgnoreCase("create"))
+        {
+            this.user.addGroup(new GroupHandler(userArgs[2], this));
+        } else if (userArgs[1].equalsIgnoreCase("add"))
+        {
+            //groupHandler.addMembers(userArgs[3], userArgs[4]);
+        }
+        else
+        {
+//            for (String x : groupHandler.getGroupMembers(userArgs[1]))
+//            {
+//
+//            }
+        }
+    }
+
+    public void changeName(String userString) throws IOException {
+        String[] userArgs = userString.split(" ", 2);
+        if (userArgs.length == 2)
+        {
+            this.user.setName(userArgs[1]);
+
+            serverToClient.writeUTF("Are you sure you want to change your nickname to: " + userArgs[1] + " ? [Y/N]");
+            serverToClient.flush();
+
+            if (clientToServer.readUTF().equalsIgnoreCase("Y"))
+            {
+                broadcastSystemMessage(SYS_MSG_TYPE.NICK_CHANGE);
+            }
+            else
+            {
+                serverToClient.writeUTF("Command Canceled");
+                serverToClient.flush();
+            }
+        }
     }
 
     public void sendMessage(String msg) throws IOException
@@ -192,5 +240,15 @@ public class ServerThread extends Thread
     public void updateList(List<ServerThread> activeConn)
     {
         this.connections = activeConn;
+    }
+
+    public ClientHandling getUser()
+    {
+        return this.user;
+    }
+
+    public List<ServerThread> getConnections()
+    {
+        return connections;
     }
 }

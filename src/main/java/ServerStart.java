@@ -5,6 +5,8 @@ import ServerHandling.ServerSide;
  * Date of Creation: September 28th, 2026
  * @author Jesus Cardenas
  * @operating-system Endeavour OS (Linux)
+ *
+ * CONSIDERED FINAL, ONLY UPDATES WILL BE COMMENTS OR SLIGHT LOGIC FIXES
  */
 
 /*

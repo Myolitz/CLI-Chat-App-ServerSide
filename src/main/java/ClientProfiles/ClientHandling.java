@@ -16,10 +16,12 @@ import java.util.List;
 
 public class ClientHandling
 {
-    @Getter @Setter
-    private String name;
-    private List<ServerThread> groupList;
+
+    private @Getter @Setter String name;
+    private @Getter @Setter String oldName;
+    private List<GroupHandler> groupList;
     private USER_TYPE status;
+    private GroupHandler groupHandler;
 
 
     public ClientHandling(String name)
@@ -38,8 +40,29 @@ public class ClientHandling
         }
     }
 
-    public void createGroup()
+    public void addGroup(GroupHandler newGroup)
     {
-        //TODO: Handle
+        groupList.add(newGroup);
+    }
+
+    public void setName(String newName)
+    {
+        this.oldName = name;
+        name = newName;
+    }
+
+    public String getOldName()
+    {
+        return oldName;
+    }
+
+//    public List<ServerThread> getGroupList() {
+//        return groupList;
+//    }
+
+    // LOMBOK is apparently not available so yeah.
+    public String getName()
+    {
+        return this.name;
     }
 }

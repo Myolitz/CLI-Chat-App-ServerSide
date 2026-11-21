@@ -3,5 +3,7 @@ package ServerHandling.Enums;
 public enum SYS_MSG_TYPE
 {
     JOIN,
-    LEAVE
+    LEAVE,
+    NICK_CHANGE,
+    CMD_CANCEL
 }

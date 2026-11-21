@@ -2,6 +2,8 @@
  *  Date of Creation: 9/24/26
  * @author Jesus Cardenas
  * @operating-system Endeavour OS (Linux)
+ *
+ * CONSIDERED FINAL, ONLY UPDATES WILL BE COMMENTS OR SLIGHT LOGIC FIXES
  */
 package ServerHandling;
 
