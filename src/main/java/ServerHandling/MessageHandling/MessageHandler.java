@@ -21,6 +21,8 @@ public class MessageHandler
                 (Map.of(
                         "/nick", USER_MSG_TYPE.COSMETIC,
                         "/priv", USER_MSG_TYPE.PRIVATE,
+                        "/private", USER_MSG_TYPE.PRIVATE,
+                        "/pm", USER_MSG_TYPE.PRIVATE,
                         "/group", USER_MSG_TYPE.GROUP,
                         "/add", USER_MSG_TYPE.GROUP
                 ));

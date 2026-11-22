@@ -68,38 +68,47 @@ public class ServerThread extends Thread
                 TODO:
                 Maybe swap serverToClient to printWriter to allow for automatic flushing?
                 Its working as-is so maybe not.
+
+                HANDLE SAME-NAME USERS
              */
             this.serverToClient = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
             this.clientToServer = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
 
             // Creates a User Profile with a nickname that serves as ID if anything.
-            // TODO: Group Messaging
             this.user = new ClientHandling(clientToServer.readUTF());
 
-            // Server broadcasting, lets every other use know who else has joined. Maybe add timestamp?
+            /*
+                Server broadcasting, lets every other use know who else has joined.
+
+                TODO: Timestamps maybe?
+             */
             System.out.println("User " + this.user.getName() + " has successfully connected");
             serverToClient.writeUTF("Welcome to the chat, please remember our rules!");
             serverToClient.flush();
+
             broadcastSystemMessage(SYS_MSG_TYPE.JOIN);
 
+            /*
+                Simple Loop that uses MessageHandler to simplify method calling until the User Quits manually or forcefully.
+             */
             while (!userString.equalsIgnoreCase("Quit"))
             {
                 userString = clientToServer.readUTF();
                 switch (msgHandler.messageType(userString))
                 {
-                    case GLOBAL -> // "[message]"
+                    case GLOBAL ->
                     {
                         broadcastMessage(userString);
                     }
-                    case PRIVATE -> // "/priv [destUser] [message]"
+                    case PRIVATE ->
                     {
                         privateMessage(userString);
                     }
-                    case GROUP -> // "/group [groupName] [message]", "/group create [groupName]", "/add [targetUser] [groupName]
+                    case GROUP ->
                     {
                         groupMessage(userString);
                     }
-                    case COSMETIC -> // "/nick [newNickName]
+                    case COSMETIC ->
                     {
                         changeName(userString);
                     }
@@ -109,19 +118,8 @@ public class ServerThread extends Thread
                     }
                 }
 
-                if (userString.equalsIgnoreCase("Quit"))
-                {
-                    broadcastSystemMessage(SYS_MSG_TYPE.LEAVE);
-                    connections.remove(this);
-                    break;
-                }
-                else
-                {
-                    System.out.println(this.user.getName() + ": " + userString);
-                }
-
-
-
+                // Prints whatever is inputted into server log for the sake of admin or w/e
+                System.out.println(this.user.getName() + ": " + userString);
             }
         } catch (IOException e) {
             try {
@@ -134,6 +132,9 @@ public class ServerThread extends Thread
 
     }
 
+    /*
+        The Simplest method, simply does an O(n) check on every active connection it can see
+     */
     public void broadcastMessage(String msg) {
         try {
             for (ServerThread x : connections)
@@ -148,7 +149,9 @@ public class ServerThread extends Thread
         }
     }
 
-    // Tells all active connections about the new one once a nickname is set as well as tells when they leave.
+    /*
+        Follows the methodology of broadcastMessage but for SYSTEM level messages only
+     */
     public void broadcastSystemMessage(SYS_MSG_TYPE type) throws IOException {
         for (ServerThread x : connections)
         {
@@ -180,6 +183,11 @@ public class ServerThread extends Thread
         }
     }
 
+    /*
+        Not overly complex, same O(n) check as broadcasting but immediately exits upon finding the user
+
+        If nothing is ever found, it simply outputs a "not found" message
+     */
     public void privateMessage(String msg) throws IOException {
 
         userArgs = msg.split(" ", 3);
@@ -189,15 +197,29 @@ public class ServerThread extends Thread
             {
                 x.serverToClient.writeUTF(dict.getChatMaps().get(CHAT_TYPE.PRIVATE) + this.user.getName() + ": " + userArgs[2]);
                 x.serverToClient.flush();
+                return;
             }
         }
+        sendMessage(userArgs[1] + " was not found or is offline");
     }
 
+    /*
+
+     */
     public void groupMessage(String msg) throws IOException {
         userArgs = msg.split(" ", 3);
 
         if (userArgs[1].equalsIgnoreCase("create")) // `/group create [groupName]`
         {
+            if (userArgs[2].length() >= 10)
+            {
+                while (userArgs[2].length() >= 10)
+                {
+                    sendMessage("Group Name too long, try again! (<10 characters)!");
+                    userArgs[2] = clientToServer.readUTF();
+                }
+            }
+
             this.user.addGroup(userArgs[2], new GroupHandler(userArgs[2], this));
 
             this.serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + "You have successfully created " + userArgs[2]);
@@ -210,21 +232,33 @@ public class ServerThread extends Thread
         }
         else // "/group [groupName] [message]"
         {
-            if (this.user.getGroupList().get(userArgs[1]) == null)
+            if (this.user.getGroupList().isEmpty())
             {
                 serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You are not part of any groups!");
                 serverToClient.flush();
+            }
+            else if (this.user.getGroupList().get(userArgs[1]) == null)
+            {
+                serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You are not part of or don't have access to " + userArgs[1]);
+                serverToClient.flush();
+
+                serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You only have access to the following groups, not counting global chat\n");
+
+                for (String x : this.user.getGroupList().keySet())
+                {
+                    serverToClient.writeUTF(x);
+                    serverToClient.flush();
+                }
             }
             else
             {
                 for (ServerThread x : connections)
                 {
-                    if (x.getUser().getGroup(userArgs[1]) == null)
+                    if (x.getUser() == null)
                     {
-                        serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You do have access or are not part of " + userArgs[1]);
-                        serverToClient.flush();
+                        continue;
                     }
-                    else
+                    if (x.getUser().getGroup(userArgs[1]) != null)
                     {
                         for (String y : this.user.getGroup(userArgs[1]).getGroupMems())
                         {
@@ -235,11 +269,13 @@ public class ServerThread extends Thread
                             }
                         }
                     }
-
+//                    else if (x.getUser().getGroup(userArgs[1]) == null)
+//                    {
+//                        serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You do have access or are not part of " + userArgs[1]);
+//                        serverToClient.flush();
+//                    }
                 }
             }
-
-
         }
     }
 

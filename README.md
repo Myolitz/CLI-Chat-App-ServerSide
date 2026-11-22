@@ -15,11 +15,11 @@ respective clients. There should still be only one server running.
 server. All clients send their chat messages to the server, and the server broadcasts these messages to
 all connected clients. There should still be only one server running.
 
-- [ ] Step 3. Further improve the chat application to include multiple chat “groups.” In each group, more
+- [x] Step 3. Further improve the chat application to include multiple chat “groups.” In each group, more
 than two clients can chat through a server. Clients in the same group send their chat messages to the
 server, and the server broadcasts these messages only to clients within the same group. Maintain only
 one running server.
 
-- [ ] Step 4. Upload code to both Github and Assignment Dropbox
+- [x] Step 4. Upload code to both Github and Assignment Dropbox
 
 - [ ] Step 5. Present this on/before Dec 4th, 2026

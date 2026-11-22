@@ -43,7 +43,7 @@ public class ClientHandling
 
     public void addGroup(String groupName, GroupHandler newGroup)
     {
-        groupList.put(groupName, newGroup);
+        this.groupList.put(groupName, newGroup);
     }
 
     public void setName(String newName)

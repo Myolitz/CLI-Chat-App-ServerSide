@@ -86,6 +86,7 @@ public class ServerSide
                 x.sendMessage(msg);
             }
         }
+
     // Actively updates the connection list for every thread, checking to see if the thread is even alive.
     // If its not, it removes it from the list to prevent broadcasting NPE/IOE
     public void updateConns()
