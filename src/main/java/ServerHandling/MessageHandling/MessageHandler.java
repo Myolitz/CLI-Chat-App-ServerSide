@@ -35,4 +35,33 @@ public class MessageHandler
 
         return messageMappings.getOrDefault(userArgs[0], USER_MSG_TYPE.GLOBAL);
     }
+
+    //TODO Handle Group Commands Better
+
+    /*
+        Maybe do regex splitting to remove hard-coding calls in `ServerThread?`
+
+        Bunch of Psuedocode, tech debt is already high enough lol to begin testing this
+
+        public X messageSplitting(String userIn, ServerThread inputThread)
+        {
+            split userIn into 3
+
+            if /GROUP == COMMAND_TYPE = userIn[0]
+
+            check userIn[1] for CREATE or GROUPNAME
+
+            if CREATE then userIn[2] is GROUPNAME
+
+            else if userIn[1] is GROUPNAME then userIn[2] is MESSAGE
+
+            else if /ADD == COMMAND_TYPE = userIn[0]
+
+            TARGET_USER = userIn[1]
+
+            GROUPNAME = userIn[2]
+
+            return these variables to then be sorted through in SERVERTHREAD
+        }
+     */
 }

@@ -9,6 +9,7 @@ package ServerHandling;
 //Objects/Enums
 import ClientProfiles.ClientHandling;
 import ClientProfiles.GroupHandler;
+import ServerHandling.Enums.USER_MSG_TYPE;
 import ServerHandling.Enums.USER_TYPE;
 import ServerHandling.Enums.CHAT_TYPE;
 import ServerHandling.Enums.SYS_MSG_TYPE;
@@ -19,6 +20,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.net.Socket;
 
@@ -71,7 +73,7 @@ public class ServerThread extends Thread
             this.clientToServer = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
 
             // Creates a User Profile with a nickname that serves as ID if anything.
-            // TODO: Private and Group Messaging
+            // TODO: Group Messaging
             this.user = new ClientHandling(clientToServer.readUTF());
 
             // Server broadcasting, lets every other use know who else has joined. Maybe add timestamp?
@@ -194,19 +196,50 @@ public class ServerThread extends Thread
     public void groupMessage(String msg) throws IOException {
         userArgs = msg.split(" ", 3);
 
-        if (userArgs[1].equalsIgnoreCase("create"))
+        if (userArgs[1].equalsIgnoreCase("create")) // `/group create [groupName]`
         {
-            this.user.addGroup(new GroupHandler(userArgs[2], this));
-        } else if (userArgs[1].equalsIgnoreCase("add"))
+            this.user.addGroup(userArgs[2], new GroupHandler(userArgs[2], this));
+
+            this.serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + "You have successfully created " + userArgs[2]);
+            this.serverToClient.flush();
+            return;
+
+        } else if (userArgs[0].equalsIgnoreCase("/add")) // "/add [targetUser] [groupName]"
         {
-            //groupHandler.addMembers(userArgs[3], userArgs[4]);
+            this.user.getGroup(userArgs[2]).addMembers(userArgs[1], userArgs[2]);
         }
-        else
+        else // "/group [groupName] [message]"
         {
-//            for (String x : groupHandler.getGroupMembers(userArgs[1]))
-//            {
-//
-//            }
+            if (this.user.getGroupList().get(userArgs[1]) == null)
+            {
+                serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You are not part of any groups!");
+                serverToClient.flush();
+            }
+            else
+            {
+                for (ServerThread x : connections)
+                {
+                    if (x.getUser().getGroup(userArgs[1]) == null)
+                    {
+                        serverToClient.writeUTF(dict.getAdminMaps().get(USER_TYPE.SERVER) + " You do have access or are not part of " + userArgs[1]);
+                        serverToClient.flush();
+                    }
+                    else
+                    {
+                        for (String y : this.user.getGroup(userArgs[1]).getGroupMems())
+                        {
+                            if (y.equalsIgnoreCase(x.getUser().getName()))
+                            {
+                                x.serverToClient.writeUTF("[" + userArgs[1] + "] " + this.user.getName() + ": " + userArgs[2]);
+                                x.serverToClient.flush();
+                            }
+                        }
+                    }
+
+                }
+            }
+
+
         }
     }
 
@@ -233,7 +266,7 @@ public class ServerThread extends Thread
 
     public void sendMessage(String msg) throws IOException
     {
-        serverToClient.writeUTF("[" + CHAT_TYPE.GLOBAL + "] " + user.getName() + ": " + msg);
+        serverToClient.writeUTF("[" + USER_TYPE.SERVER + "] " + msg);
         serverToClient.flush();
     }
 

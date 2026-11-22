@@ -12,22 +12,23 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ClientHandling
 {
-
     private @Getter @Setter String name;
     private @Getter @Setter String oldName;
-    private List<GroupHandler> groupList;
+    private Map<String, GroupHandler> groupList;
     private USER_TYPE status;
     private GroupHandler groupHandler;
 
 
     public ClientHandling(String name)
     {
+        this.groupList = new HashMap<>();
         this.name = name;
-        groupList = new ArrayList<>();
 
         //Might not be needed if I directly handle server cmds through a dedicated server thread and not a pseudo-user
         if (name.equalsIgnoreCase("admin"))
@@ -40,9 +41,9 @@ public class ClientHandling
         }
     }
 
-    public void addGroup(GroupHandler newGroup)
+    public void addGroup(String groupName, GroupHandler newGroup)
     {
-        groupList.add(newGroup);
+        groupList.put(groupName, newGroup);
     }
 
     public void setName(String newName)
@@ -56,10 +57,15 @@ public class ClientHandling
         return oldName;
     }
 
-//    public List<ServerThread> getGroupList() {
-//        return groupList;
-//    }
+    public GroupHandler getGroup(String groupName)
+    {
+        return groupList.get(groupName);
+    }
 
+    public Map<String, GroupHandler> getGroupList()
+    {
+        return groupList;
+    }
     // LOMBOK is apparently not available so yeah.
     public String getName()
     {
